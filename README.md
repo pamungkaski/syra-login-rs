@@ -24,7 +24,6 @@ A Rust-based Actix-Web service implementing a threshold Distributed Key Generati
 - **Threshold DKG Initialization** – receive and store your share of the joint public key.
 - **User Key Generation** – derive per-user secret keys (`usk` in G1, `usk_hat` in G2) after proof-of-identity verification.
 - **zkSNARK Verification** – verify Google-backed Groth16 proofs binding `sub` and `kid`.
-- **Client Demo** – sample async client to perform an (n, t) DKG round and broadcast shares.
 
 ---
 
