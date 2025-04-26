@@ -7,25 +7,17 @@ use serde::Deserialize;
 use serde_json::Value;
 use proof::base64_to_proof;
 
-// Ark‑circom + Ark‑works -------------------------------------------------------------------------
 use ark_bn254::{Bn254, Fr, Fq, Fq2, G1Affine, G1Projective, G2Affine, G2Projective};
 use ark_groth16::{Groth16, Proof};
 use ark_snark::SNARK;
 use ark_ff::{BigInteger256, PrimeField};
 use crate::proof;
-// -------------------------------------------------------------------------------------------------
-//  Constants & embedded assets
-// -------------------------------------------------------------------------------------------------
 
 /// Match the limb size used in the Circom input generator.
 pub const CHUNK_BITS: usize = 121;
 
 /// Verification key in *SnarkJS JSON* format.
 const VK_JSON: &str = include_str!("./verification_key.json");
-
-// -------------------------------------------------------------------------------------------------
-//  Google JWK parsing
-// -------------------------------------------------------------------------------------------------
 
 #[derive(Debug, Deserialize)]
 struct JwkSet {
@@ -41,9 +33,6 @@ struct Jwk {
     #[serde(rename = "alg")] _alg: String,
 }
 
-// -------------------------------------------------------------------------------------------------
-//  Verifier
-// -------------------------------------------------------------------------------------------------
 
 pub struct Verifier {
     vk: ark_groth16::VerifyingKey<Bn254>,
@@ -56,6 +45,58 @@ impl Verifier {
         Ok(Self { vk, http: Client::new() })
     }
 
+    /// # Arguments
+    /// * `&self`  
+    ///   The verifier instance, containing the in-memory verification key (`vk`).  
+    /// * `sub: &str`  
+    ///   The subject identifier (decimal string) to be bound by the proof.  
+    /// * `kid: &str`  
+    ///   The Google JWK key ID used to fetch the public key.  
+    /// * `proof_b64: &str`  
+    ///   The Base64-encoded zkSNARK proof to verify.  
+    ///
+    /// # Returns
+    /// * `Ok(true)` if the proof is valid for the given public inputs.  
+    /// * `Ok(false)` if the proof verification failed.  
+    /// * `Err(...)` if any step (fetching key, parsing, decoding, or cryptographic operations) errors out.  
+    ///
+    /// # Pseudocode
+    /// ```text
+    /// // 1) Fetch Google JSON Web Key (JWK) for `kid`
+    /// jwk = fetch_google_key(kid)
+    ///
+    /// // 2) Chunk the RSA modulus `n` into fixed-size limbs
+    /// limbs = chunk_modulus(jwk.n, CHUNK_BITS)
+    ///
+    /// // 3) Build Groth16 public inputs:
+    /// //    IC[1] = sub as field element
+    /// sub_big  = BigUint::parse(sub, base=10)
+    /// sub_fr   = biguint_to_fr(sub_big)
+    /// public_inputs = [ sub_fr ]
+    ///
+    /// //    IC[2..18] = the first 17 limbs of the modulus as Fr
+    /// for limb in limbs:
+    ///     public_inputs.push(biguint_to_fr(limb))
+    ///
+    /// //    IC[19] = sub_fr again
+    /// public_inputs.push(sub_fr)
+    ///
+    /// // 4) Decode the Base64 proof into proof struct
+    /// proof = base64_to_proof(proof_b64)
+    ///
+    /// // 5) Process the verification key and verify the proof
+    /// pvk      = Groth16.process_vk(self.vk)
+    /// verified = Groth16.verify_with_processed_vk(pvk, public_inputs, proof)
+    ///
+    /// return verified
+    /// ```
+    ///
+    /// # Errors
+    /// - Fails if fetching or parsing the JWK returns an error.
+    /// - Fails if the modulus cannot be chunked correctly.
+    /// - Fails if `sub` is not a valid decimal integer.
+    /// - Fails if proof Base64 decoding or deserialization errors.
+    /// - Fails if the Groth16 verification key cannot be processed or the proof verification itself errors.
     pub async fn verify(&self, sub: &str, kid: &str, proof_b64: &str) -> Result<bool, anyhow::Error> {
         // 1. Google key
         let jwk = self.fetch_google_key(kid).await?;
@@ -101,10 +142,6 @@ impl Verifier {
     }
 }
 
-// -------------------------------------------------------------------------------------------------
-//  VK JSON → Ark struct
-// -------------------------------------------------------------------------------------------------
-
 fn parse_vk_json(json_str: &str) -> Result<ark_groth16::VerifyingKey<Bn254>> {
     let v: Value = serde_json::from_str(json_str)?;
     Ok(ark_groth16::VerifyingKey {
@@ -116,7 +153,6 @@ fn parse_vk_json(json_str: &str) -> Result<ark_groth16::VerifyingKey<Bn254>> {
     })
 }
 
-// ---- helpers (JSON → points) -------------------------------------------------------------------
 
 fn json_to_g1(v: &Value, key: &str) -> Result<G1Affine> {
     let coords: Vec<String> = v[key].as_array().ok_or_else(|| anyhow!("{key} not array"))?
@@ -162,10 +198,6 @@ fn fq_from_dec(s: &str) -> Result<Fq> {
     Fq::from_bigint(bi)
         .ok_or_else(|| anyhow!("integer is not a canonical Fq element"))
 }
-
-// -------------------------------------------------------------------------------------------------
-//  Misc helpers
-// -------------------------------------------------------------------------------------------------
 
 fn chunk_modulus(n_b64url: &str, chunk_bits: usize) -> Result<Vec<BigUint>> {
     let n_bytes = b64::URL_SAFE_NO_PAD.decode(n_b64url)?;

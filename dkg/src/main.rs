@@ -18,6 +18,64 @@ struct DkgPointMessage {
     Ai_all: Vec<String>,
 }
 
+
+/// # Workflow
+/// 1. Derive generator `g ∈ G1` via try-and-increment.  
+/// 2. Sample secret `α ∈ Fr` and compute public `A = g^α`.  
+/// 3. Build random polynomial `f(x)` of degree `t−1` with `f(0)=α`.  
+/// 4. For each i in 1..=n:  
+///    - Evaluate share `f_i = f(i)`.  
+///    - Compute commitment `A_i = g^{f_i}`.  
+/// 5. Serialize and hex-encode `A`, each `f_i`, and the list of all `A_i`.  
+/// 6. For each peer URL, construct a `DkgPointMessage { sid, A, f_i, Ai_all }`  
+///    and send it via `POST /admin/receive_dkg`.  
+/// 7. Log success or failure for each peer, sleeping 100 ms between requests.  
+/// 8. Print completion confirmation when done.
+///
+/// # Pseudocode
+/// ```text
+/// // Setup parameters
+/// n ← 5; t ← 3; sid ← "syra-session-001"
+/// peer_urls ← ["http://127.0.0.1:9000"]
+///
+/// // Generator in G1
+/// g ← hash_to_G1("syra-generator")
+///
+/// // Sample secret and compute public A
+/// α ← random_Fr()
+/// A ← g^α
+///
+/// // Build polynomial f of degree t−1 with f(0)=α
+/// coeffs ← [α] + [random_Fr() for _ in 1..t]
+///
+/// // Evaluate shares and commitments
+/// for i in 1..=n:
+///     x ← Fr::from(i)
+///     f_i ← evaluate_polynomial(coeffs, x)
+///     A_i ← g^f_i
+///     store f_i in alpha_i_map[i]
+///     append A_i to Ai_list
+///
+/// // Hex-encode values
+/// A_hex ← hex_encode(A)
+/// Ai_all_hex ← [hex_encode(A_i) for A_i in Ai_list]
+///
+/// // Broadcast to peers
+/// for (index, url) in peer_urls:
+///     f_i_hex ← hex_encode(alpha_i_map[index+1])
+///     msg ← { sid, A: A_hex, f_i: f_i_hex, Ai_all: Ai_all_hex }
+///     res ← HTTP_POST(url + "/admin/receive_dkg", json=msg)
+///     if res.status is success:
+///         log("✓ Sent DKG point to Issuer {} (200 OK)", index+1)
+///     else:
+///         log("⚠️ Issuer {} responded: {}", index+1, res.status)
+///     sleep(100 ms)
+///
+/// log("✔ DKG complete and distributed to all issuers.")
+/// ```
+///
+/// # Errors
+/// Returns an error if any cryptographic operation, serialization, or HTTP request fails.
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let n = 5;             // Total parties
