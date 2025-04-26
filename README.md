@@ -13,8 +13,6 @@ A Rust-based Actix-Web service implementing a threshold Distributed Key Generati
     - [/admin/receive_dkg](#adminreceivedkg)
     - [/admin/generate_user_key](#admingenerate_user_key)
 - [Proof Verification](#proof-verification)
-- [Client Example](#client-example)
-- [Logging & Errors](#logging--errors)
 - [License](#license)
 
 ---
