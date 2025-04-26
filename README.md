@@ -43,4 +43,4 @@ A Rust-based Actix-Web service implementing a threshold Distributed Key Generati
 1. Clone this repository:
    ```bash
    git clone https://github.com/your-org/syra-threshold-dkg.git
-   cd syra-threshold-dkg
+   cd syra-login-rs
