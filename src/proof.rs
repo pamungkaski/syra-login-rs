@@ -8,7 +8,6 @@ use num_bigint::BigUint;
 use serde::Deserialize;
 use std::io::Cursor;
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
-// ─────────────────── helpers ────────────────────
 
 fn str_to_fq(s: &str) -> Result<Fq> {
     // accept decimal or 0x-hex
@@ -22,8 +21,6 @@ fn str_to_fq(s: &str) -> Result<Fq> {
     Ok(Fq::from_be_bytes_mod_order(&n.to_bytes_be()))
 }
 
-// ─────────────────── JSON shape ─────────────────
-
 #[derive(Debug, Deserialize)]
 struct JsProof {
     pi_a: [String; 3],
@@ -31,20 +28,17 @@ struct JsProof {
     pi_c: [String; 3],
 }
 
-// ─────────────────── converters ──────────────────
 
 fn proof_from_snarkjs_json(json: &str) -> Result<Proof<Bn254>> {
     let p: JsProof = serde_json::from_str(json)?;
 
-    // --- A -----------------------------------------------------------
     let g1: G1Affine = G1Projective::new_unchecked(
-        str_to_fq(&p.pi_a[0])?,          // instead of (&p.pi_a[0]).into()
-        str_to_fq(&p.pi_a[1])?,          // instead of (&p.pi_a[1]).into()
-        str_to_fq(&p.pi_a[2])?,          // instead of (&p.pi_a[2]).into()
+        str_to_fq(&p.pi_a[0])?, 
+        str_to_fq(&p.pi_a[1])?, 
+        str_to_fq(&p.pi_a[2])?, 
     )
         .into();
 
-    // --- B -----------------------------------------------------------
     let g2: G2Affine = G2Projective::new_unchecked(
         Fq2::new(
             str_to_fq(&p.pi_b[0][0])?,   
@@ -61,7 +55,6 @@ fn proof_from_snarkjs_json(json: &str) -> Result<Proof<Bn254>> {
     )
         .into();
 
-    // --- C -----------------------------------------------------------
     let g3: G1Affine = G1Projective::new_unchecked(
         str_to_fq(&p.pi_c[0])?,          
         str_to_fq(&p.pi_c[1])?,          
