@@ -1,0 +1,42 @@
+[package]
+name = "syra-login"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+syra = { git = "https://github.com/docknetwork/crypto", package = "syra", branch = "main" }
+actix-web = "4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Arkworks for BN254 + Groth16
+ark-bn254       = "0.4"
+ark-ff          = "0.4"
+ark-serialize   = "0.4"
+ark-groth16     = "0.4"
+ark-circom = "0.5.0"
+ark-snark = "0.4"
+
+
+# Big-integer math & traits
+num-bigint   = "0.4.6"
+num-traits   = "0.2.19"
+
+# Base64 URL-safe decoding
+base64 = "0.22.1"
+
+# HTTP client (blocking + JSON + rustls)
+reqwest = { version = "0.12.15", features = ["blocking", "json", "rustls-tls"] }
+
+# General utilities
+anyhow = "1.0.98"
+
+# (You can leave the rest of your crates below unchanged)
+dock_crypto_utils = { version = "0.22.0", default-features = false }
+blake2            = "0.10"
+hex               = "0.4"
+tokio             = { version = "1", features = ["macros", "rt-multi-thread"] }
+ark-bls12-381     = "0.4"
+ark-ec            = "0.4"
+blake3 = "1.8.2"
+log = "0.4.27"
