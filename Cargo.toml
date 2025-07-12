@@ -16,6 +16,7 @@ ark-serialize   = "0.4"
 ark-groth16     = "0.4"
 ark-circom = "0.5.0"
 ark-snark = "0.4"
+ark-std = "0.4.0"
 
 
 # Big-integer math & traits
@@ -40,3 +41,6 @@ ark-bls12-381     = "0.4"
 ark-ec            = "0.4"
 blake3 = "1.8.2"
 log = "0.4.27"
+thiserror = "1.0.69"
+unicode-normalization = "0.1.24"
+actix-cors = "0.6"
