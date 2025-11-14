@@ -1,5 +1,7 @@
 # SyRA Login – Issuer Service
 
+Implementing: [SyRA: Sybil-Resilient Anonymous Signatures with Applications to Decentralized Identity](https://eprint.iacr.org/2024/379) with OAuth
+
 **Rust/Actix-Web backend for privacy-preserving, Sybil-resilient OAuth 2.0 authentication**
 
 This micro-service supplies the back-end endpoint required by the [SyRA Login Front-End](https://github.com/pamungkaski/syra-login-fe) to mint per-user SyRA key material after a zero-knowledge proof of Google identity.  It:
